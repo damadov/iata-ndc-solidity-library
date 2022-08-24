@@ -7,8 +7,42 @@ pragma solidity ^0.8.0;
 /// @dev Contract for the IATA NDC Passenger Information
 ///
 
-abstract contract OrderListRS {
+abstract contract OrderListResponse {
 
+    /// @notice The OrderList transaction set retrieves a list of Orders that match one or more search criteria.
+    /// @param payloadAttributes - IATA payload standard attributes
+    /// @param messageDocType - NDC Message document information
+    /// @param responseType - OrderList response information.
+    /// @param errorType - Error(s) that prevented message processing.
+struct OrderListRS{
+  IATA_PayloadStandardAttributesType payloadAttributes;
+  MessageDocType messageDocType;
+  ResponseType responseType;
+  WEType errorType;
+}
+
+    /// @notice (name changed by M.Thomas, 5-Jul-2016) The IATA_PayloadStdAttributes defines the standard attributes that appear on the root element for all IATA payloads.
+    /// @param echoTokenText - A reference for additional message identification, assigned by the requesting host system. When a request message includes an echo token the corresponding response message MUST include an echo token with an identical value.
+    /// @param timestamp - Indicates the creation date and time of the message in UTC.
+    /// @param version - For all IATA versioned messages, the version of the message is indicated by a decimal value.
+    /// @param trxID - A unique identifier to relate all messages within a transaction (e.g. this would be sent in all request and response messages that are part of an on-going transaction).
+    /// @param seqNumber - Used to identify the sequence number of the transaction as assigned by the sending system; allows for an application to process messages in a certain order or to request a resynchronization of messages in the event that a system has been off-line and nee
+    /// @param primaryLangID - Identifes the primary language preference for the message.  The human language is identified by ISO 639 codes.
+    /// @param altLangID - Identifies the alternate language for a customer or message. The human language is identified by ISO 639 codes.
+    /// @param retransmissionIndicator - When true, indicates the message is being re-sent after a failure. It is recommended that this attribute is used (i.e., set to true) only when a message is retransmitted.
+    /// @param correlationID - Allow end-to-end correlation of log messages with the corresponding Web service message throughout the processing of the Web service message.
+struct IATA_PayloadStandardAttributesType{
+  string echoTokenText;
+  string timestamp;
+  string version;
+  string trxID;
+  uint16 seqNumber;
+  //TransactionStatusCode transactionStatusCode; /* Planned to define */
+  string primaryLangID;
+  string altLangID;
+  bool retransmissionIndicator;
+  string correlationID; //Create StringLength1to64 type and change with it.
+}
 
 
 struct Passenger{
@@ -16,6 +50,89 @@ struct Passenger{
     string PTC;
     string residenceCountryCode;
     IndividualType individual;
+}
+
+  /// @notice Message document information including document name and version number.
+  /// @param name - NDC Implementation Name. Example: ThisAirline Gateway
+  /// @param refVersionNumber - NDC Framework Version. Example: SOAP 2015.1
+struct MessageDocType{
+  string name;
+  string refVersionNumber;
+}
+
+  /// @notice Message document information including document name and version number.
+  /// @param name - NDC Implementation Name. Example: ThisAirline Gateway
+  /// @param refVersionNumber - NDC Framework Version. Example: SOAP 2015.1
+struct ResponseType{
+  MatchedOrderType matchedOrder;
+  OrderListProcessType orderListProcessing;
+  WEType warning;
+}
+
+struct OrderListProcessType{
+  RemarkType remarks;
+  //NoticeType[] notices;
+}
+
+struct RemarkType{
+  string displayInd;
+  string timestamp;
+}
+
+  /// @notice Contains information related to potential business errors detected during processing of the preceding request.
+  /// @param code - The code corresponding to the processing warning as defined by PADIS 9321.
+  /// @param descText - Free text description of the provided warning.
+  /// @param languageCode - Language code associated with the warning response.
+  /// @param ownerName - The name of the organization owning the warning codelist.
+  /// @param statusText - Document processing status.  Recommended values are NotProcessed, Incomplete, Complete, Unknown.
+  /// @param tagText - Identifies the tag/XPath which relates to the provided Warning.
+  /// @param typeCode - Uses a bilaterally agreed set of values to indicate the warning type.  The validating XSD can expect to accept values that it has not been explicitly coded for and process them by using Type = 'unknown'.
+  /// @param URL - Link to an online description of the provided warning.
+struct WEType{
+  string code;
+  string descText;
+  string languageCode;
+  string ownerName;
+  string statusText;
+  string tagText;
+  string typeCode;
+  string URL;
+}
+
+/// @notice Contains information related to potential business errors detected during processing of the preceding request.
+  /// @param code - The code corresponding to the processing warning as defined by PADIS 9321.
+
+struct MatchedOrderType{
+  string orderRefID;
+  string dateType;
+  string statusCode;
+  TravelAgencyType travelAgency;
+  ArrivalType arrival;
+  DepType dep;
+  PaxsType paxs;
+  //TicketingStatus ticketingStatus;
+}
+
+  /// @notice Journey Arrival information related to the specified Order.
+  /// @param IATA_StationCodeType - Arrival station/airport.
+  /// @param arrivalDate - Arrival date.
+  struct ArrivalType{
+    string stationCode;
+    string arrivalDate;
+}
+
+  /// @notice Journey departure information related to the specified Order.
+  /// @param IATA_StationCodeType - Arrival station/airport.
+  /// @param depDate - Departure date.
+  struct DepType{
+    string stationCode;
+    string depDate;
+}
+
+  /// @notice An exit/entry from an airport building to an aircraft. Could for example be a boarding gate, arrival gate, departing gate etc.
+  /// @param boardingGateID - Identifier of the gate. E.g. “A5”.
+  struct BoardingGateType{
+    string boardingGateID;
 }
 
     /// @notice A single human being as distinct from a group, class, or family.
