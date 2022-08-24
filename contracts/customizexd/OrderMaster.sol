@@ -51,7 +51,6 @@ struct Service{
 
 struct BookingReference{
         string id;
-        string 
     }
 
 }
