@@ -4,7 +4,7 @@
 pragma solidity ^0.8.0;
 
 ///
-/// @dev Contract for the IATA NDC Passenger Information
+/// @dev Contract for the IATA NDC Passenger Information | version=2021.3.3"
 ///
 
 abstract contract OrderListResponse {
@@ -16,9 +16,9 @@ abstract contract OrderListResponse {
     /// @param errorType - Error(s) that prevented message processing.
 struct OrderListRS{
   IATA_PayloadStandardAttributesType payloadAttributes;
-  MessageDocType messageDocType;
-  ResponseType responseType;
-  WEType errorType;
+  MessageDocType messageDoc;
+  ResponseType response;
+  ErrorType error;
 }
 
     /// @notice (name changed by M.Thomas, 5-Jul-2016) The IATA_PayloadStdAttributes defines the standard attributes that appear on the root element for all IATA payloads.
@@ -34,7 +34,7 @@ struct OrderListRS{
 struct IATA_PayloadStandardAttributesType{
   string echoTokenText;
   string timestamp;
-  string version;
+  string versionNumber;
   string trxID;
   uint16 seqNumber;
   //TransactionStatusCode transactionStatusCode; /* Planned to define */
@@ -42,14 +42,6 @@ struct IATA_PayloadStandardAttributesType{
   string altLangID;
   bool retransmissionIndicator;
   string correlationID; //Create StringLength1to64 type and change with it.
-}
-
-
-struct Passenger{
-    string passengerId;
-    string PTC;
-    string residenceCountryCode;
-    IndividualType individual;
 }
 
   /// @notice Message document information including document name and version number.
@@ -66,7 +58,18 @@ struct MessageDocType{
 struct ResponseType{
   MatchedOrderType matchedOrder;
   OrderListProcessType orderListProcessing;
-  WEType warning;
+  WarningType warning;
+  ContactInfoListType contactInfoList;
+}
+
+struct ContactInfoListType{
+  ContactInfoType contactInfo;
+}
+
+
+struct OtherAddressType{
+  string labelText;
+  string otherAddressText;
 }
 
 struct OrderListProcessType{
@@ -88,10 +91,32 @@ struct RemarkType{
   /// @param tagText - Identifies the tag/XPath which relates to the provided Warning.
   /// @param typeCode - Uses a bilaterally agreed set of values to indicate the warning type.  The validating XSD can expect to accept values that it has not been explicitly coded for and process them by using Type = 'unknown'.
   /// @param URL - Link to an online description of the provided warning.
-struct WEType{
+struct ErrorType{
   string code;
   string descText;
-  string languageCode;
+  string errorID;
+  string langCode;
+  string ownerName;
+  string statusText;
+  string tagText;
+  string typeCode;
+  string URL;
+}
+
+  /// @notice Contains information related to potential business errors detected during processing of the preceding request.
+  /// @param code - The code corresponding to the processing warning as defined by PADIS 9321.
+  /// @param descText - Free text description of the provided warning.
+  /// @param languageCode - Language code associated with the warning response.
+  /// @param ownerName - The name of the organization owning the warning codelist.
+  /// @param statusText - Document processing status.  Recommended values are NotProcessed, Incomplete, Complete, Unknown.
+  /// @param tagText - Identifies the tag/XPath which relates to the provided Warning.
+  /// @param typeCode - Uses a bilaterally agreed set of values to indicate the warning type.  The validating XSD can expect to accept values that it has not been explicitly coded for and process them by using Type = 'unknown'.
+  /// @param URL - Link to an online description of the provided warning.
+struct WarningType{
+  string code;
+  string descText;
+  string warningID;
+  string langCode;
   string ownerName;
   string statusText;
   string tagText;
@@ -100,16 +125,26 @@ struct WEType{
 }
 
 /// @notice Contains information related to potential business errors detected during processing of the preceding request.
-  /// @param code - The code corresponding to the processing warning as defined by PADIS 9321.
-
+  /// @param arrival - Journey Arrival information related to the specified Order.
+  /// @param creationDateTime - Date at which the Order was created.
+  /// @param dep - Journey departure information related to the specified Order.
+  /// @param orderRefID - Reference to an Order's Order ID.
+  /// @param orderStatusCode - Status of the Order Status instance. See ATSB Codeset OrderStatus for possible values.
+  /// @param paxGroup - A number of individual passengers traveling under one commercial name that associates them. E.g. a Tour group or a group for sales allotment from airline to agency. Group bookings are subject to special booking rules and may be eligible for special fare rules. Usage and nature of groups is left to bilateral agreements.
+  /// @param paxList - Passenger data list definition.
+  /// @param ticketingStatusCode - Ticketing Status. Examples: Requested, Ticketed, Other
+  /// @param travelAgency - A private retailer or public service that provides travel and tourism related services to the public on behalf of suppliers such as activities, airlines, car rentals, cruise lines, hotels, railways, travel insurance, and package tours.
 struct MatchedOrderType{
+  string creationDateTime;
   string orderRefID;
   string dateType;
-  string statusCode;
+  string orderStatusCode;
   TravelAgencyType travelAgency;
   ArrivalType arrival;
   DepType dep;
-  PaxsType paxs;
+  PaxGroupType paxGroup;
+  PaxsType paxList;
+  string ticketingStatusCode;
   //TicketingStatus ticketingStatus;
 }
 
@@ -189,24 +224,29 @@ struct PostalAddressType{
 }
 
     /// @notice The electronic or geographic address which a party has provided as the contact channel. For example, contact email, contact postal address, contact phone number.
-    /// @param ContactInfoID - Used to differentiate multiple email addresses of one contact.
-    /// @param ContactTypeText - Classification for a particular set of contact information (e.g. Primary, Payment, etc.)
-    /// @param IndividualRef - Reference to Individual instance(s)
-    /// @param ContactRefusedInd - When TRUE, Passenger refused to provide Contact Information.
-    /// @param Phone - A telephone number is a sequence of digits assigned to a fixed-line telephone subscriber station connected to a telephone line or to a wireless electronic telephony device, such as a radio telephone or a mobile telephone, or to other devices for data tra
-    /// @param OtherAddress - Other Contact Method information. E.g. web site URL, social media handle.
-    /// @param EmailAddress - The email address which should be used for contact purposes.
-    /// @param Individual - A single human being as distinct from a group, class, or family.
-    /// @param PostalAddress - Natural or physical address used for postal service. May be a building address, airport address, etc.
+    /// @param contactInfoId - Used to differentiate multiple email addresses of one contact.
+    /// @param contactPurposeText - to identify the contact purpose (PADIS code list 3299)
+    /// @param contactRefusedInd - When TRUE, Contact Information was refused to be provided.
+    /// @param individual - A single human being as distinct from a group, class, or family.
+    /// @param phone - A telephone number is a sequence of digits assigned to a fixed-line telephone subscriber station connected to a telephone line or to a wireless electronic telephony device, such as a radio telephone or a mobile telephone, or to other devices for data tra
+    /// @param otherAddress - Other Contact Method information. E.g. web site URL, social media handle.
+    /// @param emailAddress - The email address which should be used for contact purposes.
+    /// @param postalAddress - Natural or physical address used for postal service. May be a building address, airport address, etc.
+    /// @param RelationshipToPax - Relationship to the passenger e.g. used for when this individual is an emergency contact
+    /// @param individualRefID - Reference to Individual instance(s)
+    /// @param paxSegmentRefID - Uniquely identifies a Passenger Segment within the context of one message.
 struct ContactInfoType{
   string contactInfoId;
-  string contactTypeText;
-  string individualRef;
-  string contactRefuesdInfo;
-  PhoneType phoneType;
+  string contactPurposeText;
+  bool contactRefusedInd;
   EmailAddressType emailAddress;
   IndividualType individual;
+  string individualRefID;
+  OtherAddressType otherAddress;
+  string paxSegmentRefID;
+  PhoneType phone;
   PostalAddressType postalAddress;
+  string RelationshipToPax;
 }
 
  /// @notice Any person except members of the crew carried or to be carried with the consent of the carrier, on board of any transport vehicle such as aircraft, train, bus, ship. Holds the attributes specific to a one booking, from shopping to f
